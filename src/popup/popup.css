@@ -1,0 +1,25 @@
+.container {
+  width: 320px;
+  padding: 12px;
+}
+
+.search {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+}
+.list {
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.list li {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.list li.active {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
