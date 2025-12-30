@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import { getAllBookmarks } from "../services/bookmarks";
 import type { BookmarkItem } from "../services/bookmarks";
+import { initFuzzySearch, searchBookmarks } from "../services/fuzzySearch";
+
 export default function Popup() {
   const [query, setQuery] = useState("");
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [selected, setSelected] = useState(0);
 
-  useEffect(() => {
-    getAllBookmarks().then(setBookmarks);
-  }, []);
+useEffect(() => {
+  getAllBookmarks().then((data) => {
+    setBookmarks(data);
+    initFuzzySearch(data);
+  });
+}, []);
 
-  const filtered = bookmarks.filter((b) =>
-    b.title.toLowerCase().includes(query.toLowerCase())
-  );
+
+const filtered = query
+  ? searchBookmarks(query)
+  : bookmarks.slice(0, 8);
+
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!filtered.length) return;
