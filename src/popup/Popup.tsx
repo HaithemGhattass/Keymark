@@ -3,20 +3,34 @@ import { getAllBookmarks } from "../services/bookmarks";
 import type { BookmarkItem } from "../services/bookmarks";
 import { initFuzzySearch, searchBookmarks } from "../services/fuzzySearch";
 import { Search, X, Bookmark, Globe } from "lucide-react";
+import {
+  getRecentBookmarks,
+  addRecentBookmark,
+} from "../services/recentBookmarks";
 
 export default function Popup() {
   const [query, setQuery] = useState("");
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [selected, setSelected] = useState(0);
+  const [recent, setRecent] = useState<BookmarkItem[]>([]);
 
   useEffect(() => {
     getAllBookmarks().then((data) => {
       setBookmarks(data);
       initFuzzySearch(data);
     });
+      getRecentBookmarks().then(setRecent);
+
   }, []);
 
-  const filtered = query ? searchBookmarks(query) : bookmarks.slice(0, 10);
+const filtered = query
+  ? searchBookmarks(query)
+  : [
+      ...recent,
+      ...bookmarks.filter(
+        (b) => !recent.some((r) => r.url === b.url)
+      ),
+    ].slice(0, 10);
 
   // Keep selection within bounds when the filtered list changes
   useEffect(() => {
@@ -25,13 +39,15 @@ export default function Popup() {
     );
   }, [filtered.length]);
 
-  const openBookmark = (b: BookmarkItem) => {
-    try {
-      chrome.tabs.create({ url: b.url });
-    } catch (e) {
-      console.error("Failed to open bookmark", e);
-    }
-  };
+const openBookmark = async (b: BookmarkItem) => {
+  try {
+    await addRecentBookmark(b);
+    chrome.tabs.create({ url: b.url });
+  } catch (e) {
+    console.error("Failed to open bookmark", e);
+  }
+};
+
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!filtered.length) return;
@@ -97,6 +113,11 @@ export default function Popup() {
       </div>
 
       <div className="divider" />
+{!query && recent.length > 0 && (
+  <div style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }}>
+    Recently opened
+  </div>
+)}
 
       <ul
         className="results-list"
