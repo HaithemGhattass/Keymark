@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getAllBookmarks } from "../services/bookmarks";
 import type { BookmarkItem } from "../services/bookmarks";
 import { initFuzzySearch, searchBookmarks } from "../services/fuzzySearch";
+import { Search, X, Bookmark, Globe } from "lucide-react";
 
 export default function Popup() {
   const [query, setQuery] = useState("");
@@ -12,12 +13,6 @@ export default function Popup() {
     getAllBookmarks().then((data) => {
       setBookmarks(data);
       initFuzzySearch(data);
-      // Debug: confirm popup mounted and bookmarks loaded in popup DevTools console
-      try {
-        console.debug("Keymark popup mounted — bookmarks:", data.length);
-      } catch (e) {
-        /* ignore */
-      }
     });
   }, []);
 
@@ -25,7 +20,9 @@ export default function Popup() {
 
   // Keep selection within bounds when the filtered list changes
   useEffect(() => {
-    setSelected((prev) => Math.max(0, Math.min(prev, Math.max(0, filtered.length - 1))));
+    setSelected((prev) =>
+      Math.max(0, Math.min(prev, Math.max(0, filtered.length - 1)))
+    );
   }, [filtered.length]);
 
   const openBookmark = (b: BookmarkItem) => {
@@ -65,56 +62,102 @@ export default function Popup() {
   };
 
   const faviconFor = (url: string) =>
-    `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(url)}`;
+    `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(
+      url
+    )}`;
 
   return (
-    <div className="container">
-      <div className="searchRow">
+    <div className="bookmark-search-container">
+      {/* Search Input */}
+      <div className="search-input-wrapper">
+        <Search className="search-icon" />
         <input
           autoFocus
-          className="search"
+          className="search-input"
           placeholder="Search bookmarks..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setSelected(0); // reset selection on new search
+            setSelected(0);
           }}
           onKeyDown={onKeyDown}
         />
         {query && (
           <button
-            className="clear"
-            aria-label="Clear"
+            className="clear-button"
+            aria-label="Clear search"
             onClick={() => {
               setQuery("");
               setSelected(0);
             }}
           >
-            ✕
+            <X size={14} />
           </button>
         )}
       </div>
 
-      <ul className="list" role="listbox" aria-activedescendant={`item-${selected}`}>
+      <div className="divider" />
+
+      <ul
+        className="results-list"
+        role="listbox"
+        aria-activedescendant={`item-${selected}`}
+      >
         {filtered.slice(0, 10).map((b, index) => (
           <li
             id={`item-${index}`}
             key={b.id}
-            className={index === selected ? "item active" : "item"}
+            className={`bookmark-item ${index === selected ? "selected" : ""}`}
             role="option"
             aria-selected={index === selected}
             onMouseEnter={() => setSelected(index)}
             onClick={() => openBookmark(b)}
           >
-            <img className="favicon" src={faviconFor(b.url)} alt="" />
-            <div className="meta">
-              <div className="title">{b.title || b.url}</div>
-              <div className="domain">{extractDomain(b.url)}</div>
+            <div className="favicon-container">
+              <img
+                className="favicon-img"
+                src={faviconFor(b.url)}
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.classList.remove(
+                    "hidden"
+                  );
+                }}
+              />
+              <Globe className="favicon-fallback hidden" size={16} />
             </div>
+            <div className="bookmark-content">
+              <span className="bookmark-title">{b.title || b.url}</span>
+              <span className="bookmark-domain">{extractDomain(b.url)}</span>
+            </div>
+            {index === selected && <span className="enter-badge">↵</span>}
           </li>
         ))}
-        {filtered.length === 0 && <li className="empty">No bookmarks found</li>}
+
+        {filtered.length === 0 && (
+          <li className="empty-state">
+            <Bookmark className="empty-icon" />
+            <span>No bookmarks found</span>
+          </li>
+        )}
       </ul>
+
+      <div className="footer">
+        <div className="footer-item">
+          <kbd className="kbd">↑</kbd>
+          <kbd className="kbd">↓</kbd>
+          <span>navigate</span>
+        </div>
+        <div className="footer-item">
+          <kbd className="kbd">↵</kbd>
+          <span>open</span>
+        </div>
+        <div className="footer-item">
+          <kbd className="kbd">esc</kbd>
+          <span>close</span>
+        </div>
+      </div>
     </div>
   );
 }
