@@ -3,7 +3,7 @@
   "name": "Keymark",
   "description": "Keyboard-first bookmark launcher",
   "version": "1.0.0",
-  "permissions": ["bookmarks", "tabs"],
+"permissions": ["bookmarks", "tabs", "storage"],
   "action": {
     "default_popup": "index.html"
   },
