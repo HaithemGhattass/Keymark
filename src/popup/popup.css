@@ -358,3 +358,9 @@ body {
 .gap-4 {
   gap: 1rem;
 }
+.site-header {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.75rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.05em;
+}
