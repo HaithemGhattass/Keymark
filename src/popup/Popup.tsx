@@ -7,54 +7,58 @@ import {
   getRecentBookmarks,
   addRecentBookmark,
 } from "../services/recentBookmarks";
+import { groupBySite, type GroupedBookmarks } from "../utils/groupBySite";
 
 export default function Popup() {
   const [query, setQuery] = useState("");
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
-  const [selected, setSelected] = useState(0);
   const [recent, setRecent] = useState<BookmarkItem[]>([]);
+  const [selected, setSelected] = useState(0);
 
+  // Load bookmarks
   useEffect(() => {
     getAllBookmarks().then((data) => {
       setBookmarks(data);
       initFuzzySearch(data);
     });
-      getRecentBookmarks().then(setRecent);
-
+    getRecentBookmarks().then(setRecent);
   }, []);
 
-const filtered = query
-  ? searchBookmarks(query)
-  : [
-      ...recent,
-      ...bookmarks.filter(
-        (b) => !recent.some((r) => r.url === b.url)
-      ),
-    ].slice(0, 10);
+  // Visible bookmarks (search or recent + rest)
+  const visibleBookmarks = query
+    ? searchBookmarks(query)
+    : [
+        ...recent,
+        ...bookmarks.filter((b) => !recent.some((r) => r.url === b.url)),
+      ].slice(0, 20);
 
-  // Keep selection within bounds when the filtered list changes
+  const grouped: GroupedBookmarks[] = groupBySite(visibleBookmarks);
+  const flatList: BookmarkItem[] = grouped.flatMap(
+    (g: GroupedBookmarks) => g.items
+  );
+
+  // Clamp selection safely
   useEffect(() => {
     setSelected((prev) =>
-      Math.max(0, Math.min(prev, Math.max(0, filtered.length - 1)))
+      Math.max(0, Math.min(prev, Math.max(0, flatList.length - 1)))
     );
-  }, [filtered.length]);
+  }, [flatList.length]);
 
-const openBookmark = async (b: BookmarkItem) => {
-  try {
-    await addRecentBookmark(b);
-    chrome.tabs.create({ url: b.url });
-  } catch (e) {
-    console.error("Failed to open bookmark", e);
-  }
-};
-
+  const openBookmark = async (b: BookmarkItem) => {
+    try {
+      await addRecentBookmark(b);
+      chrome.tabs.create({ url: b.url });
+    } catch (e) {
+      console.error("Failed to open bookmark", e);
+    }
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!filtered.length) return;
+    if (!flatList.length) return;
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelected((prev) => Math.min(prev + 1, filtered.length - 1));
+      setSelected((prev) => Math.min(prev + 1, flatList.length - 1));
     }
 
     if (e.key === "ArrowUp") {
@@ -64,14 +68,13 @@ const openBookmark = async (b: BookmarkItem) => {
 
     if (e.key === "Enter") {
       e.preventDefault();
-      openBookmark(filtered[selected]);
+      openBookmark(flatList[selected]);
     }
   };
 
   const extractDomain = (url: string) => {
     try {
-      const u = new URL(url);
-      return u.hostname.replace(/^www\./, "");
+      return new URL(url).hostname.replace(/^www\./, "");
     } catch {
       return url;
     }
@@ -84,7 +87,7 @@ const openBookmark = async (b: BookmarkItem) => {
 
   return (
     <div className="bookmark-search-container">
-      {/* Search Input */}
+      {/* Search */}
       <div className="search-input-wrapper">
         <Search className="search-icon" />
         <input
@@ -101,7 +104,6 @@ const openBookmark = async (b: BookmarkItem) => {
         {query && (
           <button
             className="clear-button"
-            aria-label="Clear search"
             onClick={() => {
               setQuery("");
               setSelected(0);
@@ -112,73 +114,62 @@ const openBookmark = async (b: BookmarkItem) => {
         )}
       </div>
 
-      <div className="divider" />
-{!query && recent.length > 0 && (
-  <div style={{ padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }}>
-    Recently opened
-  </div>
-)}
 
-      <ul
-        className="results-list"
-        role="listbox"
-        aria-activedescendant={`item-${selected}`}
-      >
-        {filtered.slice(0, 10).map((b, index) => (
-          <li
-            id={`item-${index}`}
-            key={b.id}
-            className={`bookmark-item ${index === selected ? "selected" : ""}`}
-            role="option"
-            aria-selected={index === selected}
-            onMouseEnter={() => setSelected(index)}
-            onClick={() => openBookmark(b)}
-          >
-            <div className="favicon-container">
-              <img
-                className="favicon-img"
-                src={faviconFor(b.url)}
-                alt=""
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  e.currentTarget.nextElementSibling?.classList.remove(
-                    "hidden"
-                  );
-                }}
-              />
-              <Globe className="favicon-fallback hidden" size={16} />
-            </div>
-            <div className="bookmark-content">
-              <span className="bookmark-title">{b.title || b.url}</span>
-              <span className="bookmark-domain">{extractDomain(b.url)}</span>
-            </div>
-            {index === selected && <span className="enter-badge">↵</span>}
-          </li>
+      <ul className="results-list" role="listbox">
+        {grouped.map((group: GroupedBookmarks) => (
+          <div key={group.site}>
+            <div className="site-header">{group.site}</div>
+
+            {group.items.map((b: BookmarkItem) => {
+              const index = flatList.findIndex(
+                (item: BookmarkItem) => item.id === b.id
+              );
+
+              return (
+                <li
+                  key={b.id}
+                  className={`bookmark-item ${
+                    index === selected ? "selected" : ""
+                  }`}
+                  onMouseEnter={() => setSelected(index)}
+                  onClick={() => openBookmark(b)}
+                >
+                  <div className="favicon-container">
+                    <img
+                      className="favicon-img"
+                      src={faviconFor(b.url)}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        e.currentTarget.nextElementSibling?.classList.remove(
+                          "hidden"
+                        );
+                      }}
+                    />
+                    <Globe className="favicon-fallback hidden" size={16} />
+                  </div>
+
+                  <div className="bookmark-content">
+                    <span className="bookmark-title">{b.title || b.url}</span>
+                    <span className="bookmark-domain">
+                      {extractDomain(b.url)}
+                    </span>
+                  </div>
+
+                  {index === selected && <span className="enter-badge">↵</span>}
+                </li>
+              );
+            })}
+          </div>
         ))}
 
-        {filtered.length === 0 && (
+        {flatList.length === 0 && (
           <li className="empty-state">
             <Bookmark className="empty-icon" />
             <span>No bookmarks found</span>
           </li>
         )}
       </ul>
-
-      <div className="footer">
-        <div className="footer-item">
-          <kbd className="kbd">↑</kbd>
-          <kbd className="kbd">↓</kbd>
-          <span>navigate</span>
-        </div>
-        <div className="footer-item">
-          <kbd className="kbd">↵</kbd>
-          <span>open</span>
-        </div>
-        <div className="footer-item">
-          <kbd className="kbd">esc</kbd>
-          <span>close</span>
-        </div>
-      </div>
     </div>
   );
 }
