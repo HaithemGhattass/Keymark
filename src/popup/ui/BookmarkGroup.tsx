@@ -26,6 +26,7 @@ export function BookmarkGroup({
         return (
           <BookmarkListItem
             key={bookmark.id}
+            index={index}
             bookmark={bookmark}
             isSelected={index === selected}
             onSelect={() => onSelect(index)}

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { BookmarkGroup } from "./BookmarkGroup";
 import { EmptyState } from "./EmptyState";
 import type { BookmarkItem } from "../../services/bookmarks";
@@ -26,8 +27,21 @@ export function BookmarkList({
     );
   }
 
+  const listRef = useRef<HTMLUListElement | null>(null);
+
+  useEffect(() => {
+    if (selected == null) return;
+    const root = listRef.current;
+    if (!root) return;
+
+    const el = root.querySelector(`[data-index="${selected}"]`) as HTMLElement | null;
+    if (!el) return;
+
+    el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selected]);
+
   return (
-    <ul className="results-list" role="listbox">
+    <ul className="results-list" role="listbox" ref={listRef}>
       {grouped.map((group) => (
         <BookmarkGroup
           key={group.site}

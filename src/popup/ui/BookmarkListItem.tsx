@@ -1,4 +1,3 @@
-// components/Popup/BookmarkListItem.tsx
 import { Globe } from "lucide-react";
 import type { BookmarkItem } from "../../services/bookmarks";
 import { extractDomain, getFaviconUrl } from "../../utils/urlHelpers";
@@ -8,6 +7,7 @@ interface BookmarkListItemProps {
   isSelected: boolean;
   onSelect: () => void;
   onOpen: () => void;
+  index: number;
 }
 
 export function BookmarkListItem({
@@ -15,6 +15,7 @@ export function BookmarkListItem({
   isSelected,
   onSelect,
   onOpen,
+  index,
 }: BookmarkListItemProps) {
   const handleFaviconError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.style.display = "none";
@@ -23,6 +24,7 @@ export function BookmarkListItem({
 
   return (
     <li
+      data-index={index}
       className={`bookmark-item ${isSelected ? "selected" : ""}`}
       onMouseEnter={onSelect}
       onClick={onOpen}

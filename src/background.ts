@@ -1,6 +1,5 @@
 chrome.commands.onCommand.addListener((command) => {
   if (command !== "open-keymark") return;
-  // Helper fallback that opens our main UI as a popup window.
   const openFallbackWindow = () => {
     try {
       chrome.windows.create({

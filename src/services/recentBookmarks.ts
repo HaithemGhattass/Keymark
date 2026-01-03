@@ -16,7 +16,6 @@ export function getRecentBookmarks(): Promise<BookmarkItem[]> {
 export async function addRecentBookmark(bookmark: BookmarkItem) {
   const recents = await getRecentBookmarks();
 
-  // Remove duplicates
   const filtered = recents.filter((b) => b.url !== bookmark.url);
 
   const updated = [bookmark, ...filtered].slice(0, MAX_RECENTS);

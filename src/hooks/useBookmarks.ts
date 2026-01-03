@@ -1,4 +1,3 @@
-// hooks/useBookmarks.ts
 import { useEffect, useState } from "react";
 import { getAllBookmarks, type BookmarkItem } from "../services/bookmarks";
 import { initFuzzySearch, searchBookmarks } from "../services/fuzzySearch";
