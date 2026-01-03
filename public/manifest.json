@@ -1,11 +1,18 @@
 {
   "manifest_version": 3,
   "name": "Keymark",
-  "description": "Keyboard-first bookmark launcher",
+  "description": "Keymark — quick, fuzzy-search bookmarks with site grouping and keyboard navigation.",
   "version": "1.0.0",
 "permissions": ["bookmarks", "tabs", "storage"],
   "action": {
-    "default_popup": "index.html"
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icon.png",
+      "32": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+
   },
   "background": {
   "service_worker": "background.js"
