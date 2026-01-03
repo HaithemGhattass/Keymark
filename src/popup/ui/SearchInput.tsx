@@ -25,7 +25,7 @@ export function SearchInput({
         onKeyDown={onKeyDown}
       />
       {query && (
-        <button className="clear-button" onClick={onClear}>
+        <button className="clear-button" onClick={onClear} aria-label="Clear search">
           <X size={14} />
         </button>
       )}
