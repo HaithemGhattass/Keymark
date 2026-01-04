@@ -10,6 +10,11 @@ Features
 - Quick open from a keyboard shortcut (configure in the Extension settings).
 
 
+
+https://github.com/user-attachments/assets/4270be28-bed0-45fa-89df-03f3f54468fb
+
+
+
 Quickstart
 
 Prerequisites
